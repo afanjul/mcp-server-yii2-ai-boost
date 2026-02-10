@@ -10,6 +10,8 @@ use yii\base\Component;
  * Base class for MCP Tools
  *
  * All MCP tools should extend this class and implement the required methods.
+ * 
+ * @property \yii\base\Application $app The Yii application instance
  */
 abstract class BaseTool extends Component
 {
@@ -156,27 +158,7 @@ abstract class BaseTool extends Component
      */
     protected function getActiveRecordModels(): array
     {
-        $modelsPath = \Yii::getAlias('@app/models');
-        if (!is_dir($modelsPath)) {
-            return [];
-        }
-
-        $models = [];
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($modelsPath, \RecursiveDirectoryIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST
-        );
-
-        foreach ($iterator as $file) {
-            if ($file->isFile() && $file->getExtension() === 'php') {
-                $className = $this->getClassNameFromFile($file->getPathname());
-                if ($className && $this->isActiveRecordModel($className)) {
-                    $models[] = $className;
-                }
-            }
-        }
-
-        return $models;
+        return $this->getActiveRecordModelsFromPath('@app/models');
     }
 
     /**
@@ -272,18 +254,104 @@ abstract class BaseTool extends Component
             return $model;
         }
 
-        // Short name — scan @app/models to find a match
-        $allModels = $this->getActiveRecordModels();
-        foreach ($allModels as $className) {
-            $parts = explode('\\', $className);
-            $shortName = end($parts);
-            if (strcasecmp($shortName, $model) === 0) {
-                return $className;
+        // Search in multiple directories for better auto-detection
+        $searchPaths = [
+            'common\models',  // For multi-tenant applications
+            '@app/models',    // Standard Yii2 applications
+            'backend\models', // Backend-specific models
+            'frontend/models', // Frontend-specific models
+        ];
+
+        $foundModels = [];
+        
+        foreach ($searchPaths as $path) {
+            $models = $this->getActiveRecordModelsFromPath($path);
+            foreach ($models as $className) {
+                $parts = explode('\\', $className);
+                $shortName = end($parts);
+                if (strcasecmp($shortName, $model) === 0) {
+                    $foundModels[] = $className;
+                }
             }
         }
 
+        if (count($foundModels) === 1) {
+            return $foundModels[0];
+        }
+        
+        if (count($foundModels) > 1) {
+            throw new \Exception(
+                "Multiple models found for '$model':\n" .
+                implode("\n", $foundModels) .
+                "\nPlease use full class name to specify which one."
+            );
+        }
+
+        // No found - show available models
+        $availableModels = $this->getAvailableModelNames();
         throw new \Exception(
-            "Model '$model' not found. Provide a full class name or ensure the model exists in @app/models."
+            "Model '$model' not found.\n" .
+            "Available models:\n" . implode("\n", array_slice($availableModels, 0, 10)) .
+            (count($availableModels) > 10 ? "\n... and " . (count($availableModels) - 10) . " more" : "") .
+            "\n\nUse full class name (e.g., 'common\\models\\Contact') or ensure model exists."
         );
+    }
+
+    /**
+     * Get Active Record models from a specific path
+     *
+     * @param string $path Path to search (e.g., 'common\models')
+     * @return array Fully qualified class names
+     */
+    protected function getActiveRecordModelsFromPath(string $path): array
+    {
+        $modelsPath = \Yii::getAlias($path);
+        if (!is_dir($modelsPath)) {
+            return [];
+        }
+
+        $models = [];
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($modelsPath, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $file) {
+            if ($file->isFile() && $file->getExtension() === 'php') {
+                $className = $this->getClassNameFromFile($file->getPathname());
+                if ($className && $this->isActiveRecordModel($className)) {
+                    $models[] = $className;
+                }
+            }
+        }
+
+        return $models;
+    }
+
+    /**
+     * Get all available model names from all search paths
+     *
+     * @return array Array of model names
+     */
+    protected function getAvailableModelNames(): array
+    {
+        $searchPaths = [
+            'common\models',
+            '@app/models',
+            'backend\models',
+            'frontend/models',
+        ];
+
+        $allModels = [];
+        foreach ($searchPaths as $path) {
+            $models = $this->getActiveRecordModelsFromPath($path);
+            $allModels = array_merge($allModels, $models);
+        }
+
+        // Remove duplicates and sort
+        $allModels = array_unique($allModels);
+        sort($allModels);
+
+        return $allModels;
     }
 }

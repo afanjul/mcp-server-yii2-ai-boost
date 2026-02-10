@@ -25,7 +25,7 @@ final class ModelInspectorTool extends BaseTool
 
     public function getDescription(): string
     {
-        return 'Inspect Active Record models including attributes, relations, behaviors, scenarios, and fields';
+        return 'Inspect Active Record models including attributes, relations, behaviors, scenarios, and fields. Supports auto-detection in common/models, app/models, backend/models, and frontend/models.';
     }
 
     public function getInputSchema(): array
@@ -35,16 +35,12 @@ final class ModelInspectorTool extends BaseTool
             'properties' => [
                 'model' => [
                     'type' => 'string',
-                    'description' => 'Model class name or short name (e.g., "User" or "app\\models\\User")',
+                    'description' => 'Model class name or short name (e.g., "User", "Contact", or "app\\models\\User"). Auto-detects in common/models, app/models, backend/models, and frontend/models.',
                 ],
                 'include' => [
                     'type' => 'array',
                     'items' => ['type' => 'string'],
                     'description' => 'What to include: attributes, relations, behaviors, scenarios, fields, all',
-                ],
-                'tenant_id' => [
-                    'type' => 'integer',
-                    'description' => 'Tenant ID for multi-tenant applications (optional, auto-detects if not provided)',
                 ],
             ],
         ];
@@ -54,7 +50,6 @@ final class ModelInspectorTool extends BaseTool
     {
         $modelName = $arguments['model'] ?? '';
         $include = $arguments['include'] ?? ['attributes', 'relations'];
-        $tenantId = $arguments['tenant_id'] ?? null;
 
         if (empty($modelName)) {
             return ['models' => $this->getActiveRecordModels()];
@@ -66,16 +61,10 @@ final class ModelInspectorTool extends BaseTool
 
         $className = $this->resolveModelClass($modelName);
 
-        // Setup tenant context before instantiation
-        $this->setupTenantContext($tenantId);
-
         try {
             $instance = new $className();
         } catch (\Exception $e) {
             throw new \Exception("Cannot instantiate model '$className': " . $e->getMessage());
-        } finally {
-            // Always cleanup tenant context
-            $this->clearTenantContext();
         }
 
         $result = [
@@ -337,56 +326,5 @@ final class ModelInspectorTool extends BaseTool
         }
 
         return $result;
-    }
-
-    /**
-     * Setup tenant context before model instantiation
-     * 
-     * @param int|null $tenantId Tenant ID or null to auto-detect
-     * @return void
-     */
-    private function setupTenantContext(?int $tenantId): void
-    {
-        if ($tenantId === null) {
-            // Auto-detect first available tenant
-            $tenantId = $this->getDefaultTenantId();
-        }
-
-        if ($tenantId && \Yii::$app->has('tenantResolver')) {
-            \Yii::$app->tenantResolver->setTenantId($tenantId);
-        }
-    }
-
-    /**
-     * Clear tenant context after execution
-     * 
-     * @return void
-     */
-    private function clearTenantContext(): void
-    {
-        if (\Yii::$app->has('tenantResolver')) {
-            // Optional: reset tenant_id to null
-            // \Yii::$app->tenantResolver->setTenantId(null);
-        }
-    }
-
-    /**
-     * Get default tenant ID by querying the first account
-     * 
-     * @return int|null
-     */
-    private function getDefaultTenantId(): ?int
-    {
-        try {
-            $db = \Yii::$app->db;
-            $tenantId = $db->createCommand(
-                'SELECT account_id FROM account ORDER BY account_id ASC LIMIT 1'
-            )->queryScalar();
-
-            return $tenantId ? (int)$tenantId : 1;
-        } catch (\Exception $e) {
-            // Fallback: use tenant_id = 1
-            return 1;
-        }
     }
 }
