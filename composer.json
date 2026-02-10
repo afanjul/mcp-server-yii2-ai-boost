@@ -1,22 +1,18 @@
 {
-    "name": "afanjul/yii2-ai-boost",
-    "description": "MCP Server for Yii2 applications with Multi-Tenant support",
-    "keywords": ["yii2", "mcp", "ai", "assistant", "tools", "guidelines", "claude", "multitenant"],
+    "name": "codechap/yii2-ai-boost",
+    "description": "MCP Server for Yii2 applications - provides AI context and development tools via Model Context Protocol",
+    "keywords": ["yii2", "mcp", "ai", "assistant", "tools", "guidelines", "claude"],
     "type": "yii2-extension",
     "license": "BSD-3-Clause",
     "authors": [
         {
-            "name": "Alex Fanjul",
-            "email": "afanjul@palbin.com"
-        },
-        {
-            "name": "CodeChap (Original Author)",
+            "name": "CodeChap",
             "email": "dev@codechap.io"
         }
     ],
     "support": {
-        "issues": "https://github.com/afanjul/yii2-ai-boost/issues",
-        "source": "https://github.com/afanjul/yii2-ai-boost"
+        "issues": "https://github.com/codechap/yii2-ai-boost/issues",
+        "source": "https://github.com/codechap/yii2-ai-boost"
     },
     "repositories": [
         {
