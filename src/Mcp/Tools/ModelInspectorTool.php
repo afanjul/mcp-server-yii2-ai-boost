@@ -25,7 +25,7 @@ final class ModelInspectorTool extends BaseTool
 
     public function getDescription(): string
     {
-        return 'Inspect Active Record models including attributes, relations, behaviors, scenarios, and fields. Supports auto-detection in common/models, app/models, backend/models, and frontend/models.';
+        return 'Inspect Active Record models including attributes, relations, behaviors, scenarios, and fields';
     }
 
     public function getInputSchema(): array
@@ -35,7 +35,7 @@ final class ModelInspectorTool extends BaseTool
             'properties' => [
                 'model' => [
                     'type' => 'string',
-                    'description' => 'Model class name or short name (e.g., "User", "Contact", or "app\\models\\User"). Auto-detects in common/models, app/models, backend/models, and frontend/models.',
+                    'description' => 'Full model class name (e.g., "common\models\Contact", "app\models\User")',
                 ],
                 'include' => [
                     'type' => 'array',

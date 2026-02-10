@@ -47,7 +47,7 @@ final class ValidationRulesTool extends BaseTool
             'properties' => [
                 'model' => [
                     'type' => 'string',
-                    'description' => 'Model class name or short name (e.g., "User" or "app\\models\\User")',
+                    'description' => 'Full model class name (e.g., "common\models\Contact", "app\models\User")',
                 ],
                 'scenario' => [
                     'type' => 'string',

@@ -235,9 +235,9 @@ abstract class BaseTool extends Component
     }
 
     /**
-     * Resolve a model class from either a short name or fully qualified class name
+     * Resolve a model class from a fully qualified class name
      *
-     * @param string $model Short class name (e.g., "User") or FQCN (e.g., "app\models\User")
+     * @param string $model FQCN (e.g., "common\models\Contact", "app\models\User")
      * @return string Fully qualified class name
      * @throws \Exception If model cannot be found or is not an ActiveRecord
      */
@@ -287,13 +287,12 @@ abstract class BaseTool extends Component
             );
         }
 
-        // No found - show available models
+        // No found - show available models with full class names
         $availableModels = $this->getAvailableModelNames();
         throw new \Exception(
             "Model '$model' not found.\n" .
-            "Available models:\n" . implode("\n", array_slice($availableModels, 0, 10)) .
-            (count($availableModels) > 10 ? "\n... and " . (count($availableModels) - 10) . " more" : "") .
-            "\n\nUse full class name (e.g., 'common\\models\\Contact') or ensure model exists."
+            "Available models (use full class name):\n" . implode("\n", array_slice($availableModels, 0, 10)) .
+            (count($availableModels) > 10 ? "\n... and " . (count($availableModels) - 10) . " more" : "")
         );
     }
 
