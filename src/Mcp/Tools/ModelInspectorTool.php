@@ -170,6 +170,16 @@ final class ModelInspectorTool extends BaseTool
                 continue;
             }
 
+            // Check return type hint if available to avoid calling non-relation methods
+            $returnType = $method->getReturnType();
+            if ($returnType !== null && !$returnType->allowsNull()) {
+                $typeName = $returnType instanceof \ReflectionNamedType ? $returnType->getName() : '';
+                // Skip if return type is a scalar or other non-object type
+                if (in_array($typeName, ['string', 'int', 'float', 'bool', 'array', 'void'], true)) {
+                    continue;
+                }
+            }
+
             // Try to call the method and check if it returns an ActiveQuery
             try {
                 $returnValue = $instance->{$methodName}();
